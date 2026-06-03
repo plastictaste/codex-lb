@@ -445,6 +445,7 @@ export function createDashboardSettings(
 		limitWarmupPrompt: "Say OK.",
 		limitWarmupCooldownSeconds: 3600,
 		limitWarmupMinAvailablePercent: 100,
+		limitWarmupStaggeredIdleEnabled: false,
 		...overrides,
 	});
 }
