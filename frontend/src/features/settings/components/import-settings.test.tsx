@@ -88,6 +88,7 @@ describe("ImportSettings", () => {
       limitWarmupCooldownSeconds: settings.limitWarmupCooldownSeconds,
       limitWarmupMinAvailablePercent: settings.limitWarmupMinAvailablePercent,
       weeklyPaceWorkingDays: settings.weeklyPaceWorkingDays,
+      limitWarmupStaggeredIdleEnabled: settings.limitWarmupStaggeredIdleEnabled,
     });
   });
 
