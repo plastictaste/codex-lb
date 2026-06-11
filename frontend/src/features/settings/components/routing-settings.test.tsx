@@ -598,6 +598,7 @@ describe("RoutingSettings", () => {
       importWithoutOverwrite: false,
       totpRequiredOnLogin: false,
       apiKeyAuthEnabled: true,
+      weeklyPaceWorkingDays: BASE_SETTINGS.weeklyPaceWorkingDays,
       ...LIMIT_WARMUP_DEFAULTS,
       limitWarmupEnabled: true,
       limitWarmupStaggeredIdleEnabled: true,
