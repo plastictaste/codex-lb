@@ -53,6 +53,30 @@ describe("CopyButton", () => {
     expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
   });
 
+  it("clears pending copied reset timer on unmount", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window, "isSecureContext", {
+      configurable: true,
+      value: true,
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+
+    const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
+
+    const { unmount } = render(<CopyButton value="secret-value" />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+      await Promise.resolve();
+    });
+
+    unmount();
+
+    expect(clearTimeoutSpy).toHaveBeenCalledTimes(1);
+  });
+
   it("shows error toast when clipboard write fails", async () => {
     const writeText = vi.fn().mockRejectedValue(new Error("clipboard blocked"));
     Object.defineProperty(window, "isSecureContext", {
