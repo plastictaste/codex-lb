@@ -866,8 +866,9 @@ async def test_stream_via_http_bridge_turn_state_request_ignores_prompt_cache_ow
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         return request_state, '{"type":"response.create"}'
 
     session = proxy_service._HTTPBridgeSession(
@@ -1602,8 +1603,9 @@ async def test_stream_via_http_bridge_injects_durable_previous_response_anchor(
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         captured["previous_response_id"] = prepared_payload.previous_response_id
         return request_state, '{"type":"response.create"}'
 
@@ -1746,8 +1748,9 @@ async def test_stream_via_http_bridge_trims_replayed_tool_call_items_with_previo
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         assert isinstance(prepared_payload.input, list)
         captured_input[:] = cast(list[proxy_service.JsonValue], prepared_payload.input)
         request_state.previous_response_id = prepared_payload.previous_response_id
@@ -1855,8 +1858,9 @@ async def test_stream_via_http_bridge_does_not_inject_session_anchor_for_soft_re
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         prepared_previous_response_ids.append(prepared_payload.previous_response_id)
         return request_state, '{"type":"response.create"}'
 
@@ -1968,8 +1972,9 @@ async def test_stream_via_http_bridge_skips_session_anchor_injection_when_trim_w
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         prepared_previous_response_ids.append(prepared_payload.previous_response_id)
         return request_state, '{"type":"response.create"}'
 
@@ -2091,8 +2096,9 @@ async def test_stream_via_http_bridge_does_not_inject_durable_previous_response_
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         captured["previous_response_id"] = prepared_payload.previous_response_id
         inp = prepared_payload.input
         prepared_input_lengths.append(len(inp) if isinstance(inp, list) else 1)
@@ -2227,8 +2233,9 @@ async def test_stream_via_http_bridge_injects_durable_anchor_for_trimmable_full_
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         prepared_previous_response_ids.append(prepared_payload.previous_response_id)
         inp = prepared_payload.input
         prepared_input_lengths.append(len(inp) if isinstance(inp, list) else 1)
@@ -2357,8 +2364,9 @@ async def test_stream_via_http_bridge_does_not_inject_durable_previous_response_
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         captured["previous_response_id"] = prepared_payload.previous_response_id
         return request_state, '{"type":"response.create"}'
 
@@ -2480,8 +2488,9 @@ async def test_stream_via_http_bridge_does_not_prefer_durable_account_for_soft_p
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         captured["previous_response_id"] = prepared_payload.previous_response_id
         return request_state, '{"type":"response.create"}'
 
@@ -2612,8 +2621,9 @@ async def test_stream_via_http_bridge_prefers_durable_account_for_soft_prompt_ca
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         captured["previous_response_id"] = prepared_payload.previous_response_id
         return request_state, '{"type":"response.create"}'
 
@@ -3034,8 +3044,9 @@ async def test_stream_via_http_bridge_does_not_inject_durable_anchor_for_live_tu
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         captured["previous_response_id"] = prepared_payload.previous_response_id
         return request_state, '{"type":"response.create"}'
 
@@ -3162,8 +3173,9 @@ async def test_stream_via_http_bridge_does_not_inject_durable_anchor_for_live_pr
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         captured["previous_response_id"] = prepared_payload.previous_response_id
         return request_state, '{"type":"response.create"}'
 
@@ -3282,8 +3294,9 @@ async def test_stream_via_http_bridge_does_not_inject_durable_anchor_when_forwar
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         captured["previous_response_id"] = prepared_payload.previous_response_id
         return request_state, '{"type":"response.create"}'
 
@@ -3395,8 +3408,9 @@ async def test_stream_via_http_bridge_clears_injected_anchor_after_owner_unavail
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         prepared_previous_response_ids.append(prepared_payload.previous_response_id)
         state = proxy_service._WebSocketRequestState(
             request_id=f"req-{len(request_states)}",
@@ -3557,8 +3571,9 @@ async def test_stream_via_http_bridge_does_not_inject_durable_previous_response_
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         captured["previous_response_id"] = prepared_payload.previous_response_id
         return request_state, '{"type":"response.create"}'
 
@@ -3683,8 +3698,9 @@ async def test_stream_via_http_bridge_resolves_previous_response_owner_from_requ
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         return request_state, '{"type":"response.create"}'
 
     session = proxy_service._HTTPBridgeSession(
@@ -3818,8 +3834,9 @@ async def test_stream_via_http_bridge_uses_generated_downstream_turn_state_for_o
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
-        del api_key, api_key_reservation, request_id
+        del api_key, api_key_reservation, request_id, client_ip
         inp = _prepared_payload.input
         prepared_input_lengths.append(len(inp) if isinstance(inp, list) else 1)
         return request_state, '{"type":"response.create"}'
@@ -4407,6 +4424,7 @@ async def test_stream_via_http_bridge_reacquires_api_key_reservation_for_local_p
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
         del prepared_payload, api_key, request_id
         prepare_reservations.append(api_key_reservation)
@@ -4571,6 +4589,7 @@ async def test_stream_via_http_bridge_does_not_rebind_after_downstream_visible(
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
         del prepared_payload, api_key, api_key_reservation, request_id
         return request_state, '{"type":"response.create"}'
@@ -4766,6 +4785,7 @@ async def test_stream_via_http_bridge_reacquires_api_key_reservation_after_owner
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
         del prepared_payload, api_key, request_id
         prepare_reservations.append(api_key_reservation)
@@ -4934,6 +4954,7 @@ async def test_stream_via_http_bridge_local_previous_response_rebind_fails_exist
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
         del prepared_payload, api_key, api_key_reservation, request_id
         prepare_calls["count"] += 1
@@ -5095,6 +5116,7 @@ async def test_stream_via_http_bridge_rolls_over_session_after_context_length_ex
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
         del prepared_payload, api_key, api_key_reservation, request_id
         return request_state, '{"type":"response.create","request":"initial"}'
@@ -5229,6 +5251,7 @@ async def test_stream_via_http_bridge_context_overflow_keeps_hard_affinity_sessi
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
         del prepared_payload, api_key, api_key_reservation, request_id
         return request_state, '{"type":"response.create","request":"initial"}'
@@ -5367,6 +5390,7 @@ async def test_stream_via_http_bridge_context_overflow_does_not_retry_hard_affin
         api_key: proxy_service.ApiKeyData | None,
         api_key_reservation: proxy_service.ApiKeyUsageReservationData | None,
         request_id: str,
+        client_ip: str | None = None,
     ) -> tuple[proxy_service._WebSocketRequestState, str]:
         del api_key, api_key_reservation
         prepare_previous_response_ids.append(prepared_payload.previous_response_id)

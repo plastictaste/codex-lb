@@ -475,6 +475,7 @@ class _WebSocketMixin:
         codex_session_affinity: bool,
         openai_cache_affinity: bool,
         api_key: ApiKeyData | None,
+        client_ip: str | None = None,
     ) -> None:
         proxy = cast(_WebSocketServiceProtocol, self)
         _ = proxy
@@ -644,6 +645,7 @@ class _WebSocketMixin:
                                     continuity_state=continuity_state,
                                     useragent=useragent,
                                     useragent_group=useragent_group,
+                                    client_ip=client_ip,
                                 )
                                 if await _websocket_full_replay_should_wait_for_continuity(
                                     prepared_request.request_state,
@@ -678,6 +680,7 @@ class _WebSocketMixin:
                                         continuity_state=continuity_state,
                                         useragent=useragent,
                                         useragent_group=useragent_group,
+                                        client_ip=client_ip,
                                     )
                                 request_state = prepared_request.request_state
                                 request_affinity = prepared_request.affinity_policy
@@ -1116,6 +1119,7 @@ class _WebSocketMixin:
         continuity_state: "_WebSocketContinuityState | None" = None,
         useragent: str | None = None,
         useragent_group: str | None = None,
+        client_ip: str | None = None,
     ) -> _PreparedWebSocketRequest:
         proxy = cast(_WebSocketServiceProtocol, self)
         _ = proxy
@@ -1226,6 +1230,7 @@ class _WebSocketMixin:
             raise
         request_state.useragent = useragent
         request_state.useragent_group = useragent_group
+        request_state.client_ip = client_ip
         request_state.expose_stale_previous_response_classifier = codex_session_affinity
         if session_anchor is not None:
             request_state.proxy_injected_previous_response_id = True
@@ -3272,6 +3277,7 @@ class _WebSocketMixin:
                 upstream_proxy_fail_closed_reason=request_state.upstream_proxy_fail_closed_reason,
                 useragent=request_state.useragent,
                 useragent_group=request_state.useragent_group,
+                client_ip=request_state.client_ip,
             )
 
     async def _write_websocket_connect_failure(
@@ -3312,6 +3318,7 @@ class _WebSocketMixin:
             upstream_proxy_fail_closed_reason=request_state.upstream_proxy_fail_closed_reason,
             useragent=request_state.useragent,
             useragent_group=request_state.useragent_group,
+            client_ip=request_state.client_ip,
         )
 
     async def _emit_websocket_connect_failure(
@@ -3512,6 +3519,7 @@ class _WebSocketMixin:
                 upstream_proxy_fail_closed_reason=request_state.upstream_proxy_fail_closed_reason,
                 useragent=request_state.useragent,
                 useragent_group=request_state.useragent_group,
+                client_ip=request_state.client_ip,
             )
 
     async def _emit_websocket_terminal_error(
