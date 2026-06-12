@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import sys
 import time
@@ -163,6 +164,25 @@ def _service_pop_compact_timeout_overrides(token: object) -> None:
         cast(Callable[[object], None], func)(token)
         return
     pop_compact_timeout_overrides(cast(Any, token))
+
+
+def _request_kind_from_headers(headers: Mapping[str, str]) -> str:
+    raw_metadata = headers.get("x-codex-turn-metadata") or headers.get("X-Codex-Turn-Metadata")
+    if not raw_metadata:
+        return "normal"
+    try:
+        metadata = json.loads(raw_metadata)
+    except json.JSONDecodeError:
+        return "normal"
+    if not isinstance(metadata, dict):
+        return "normal"
+    raw_request_kind = metadata.get("request_kind")
+    if not isinstance(raw_request_kind, str):
+        return "normal"
+    request_kind = raw_request_kind.strip()
+    if not request_kind:
+        return "normal"
+    return request_kind[:64]
 
 
 def _remaining_budget_seconds(deadline: float) -> float:
@@ -383,6 +403,7 @@ class _CompactMixin:
         _maybe_log_proxy_request_payload("compact", payload, headers)
         filtered = filter_inbound_headers(headers)
         useragent, useragent_group = _request_log_useragent_fields(headers)
+        request_kind = _request_kind_from_headers(headers)
         request_id = get_request_id() or ensure_request_id(None)
         start = _service_time().monotonic()
         base_settings = _service_get_settings()
@@ -491,15 +512,10 @@ class _CompactMixin:
                         target.id,
                     )
                     _raise_proxy_budget_exhausted()
-                if base_settings.upstream_compact_timeout_seconds is None:
-                    timeout_tokens = _service_push_compact_timeout_overrides(
-                        connect_timeout_seconds=remaining_budget,
-                    )
-                else:
-                    timeout_tokens = _service_push_compact_timeout_overrides(
-                        connect_timeout_seconds=remaining_budget,
-                        total_timeout_seconds=remaining_budget,
-                    )
+                timeout_tokens = _service_push_compact_timeout_overrides(
+                    connect_timeout_seconds=remaining_budget,
+                    total_timeout_seconds=remaining_budget,
+                )
                 create_lease: AdmissionLease | None = None
                 try:
                     if account_response_create_lease is None:
@@ -952,6 +968,7 @@ class _CompactMixin:
                 upstream_proxy_fail_closed_reason=route_fail_closed_reason,
                 useragent=useragent,
                 useragent_group=useragent_group,
+                request_kind=request_kind,
             )
             _maybe_log_proxy_service_tier_trace(
                 "compact",

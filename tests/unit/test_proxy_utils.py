@@ -5432,7 +5432,7 @@ async def test_compact_responses_uses_configured_timeout_and_maps_read_timeout(m
 
 
 @pytest.mark.asyncio
-async def test_compact_responses_defaults_to_no_request_timeout(monkeypatch):
+async def test_compact_responses_defaults_to_no_configured_request_timeout(monkeypatch):
     class Settings:
         upstream_base_url = "https://chatgpt.com/backend-api"
         upstream_connect_timeout_seconds = 2.0
@@ -5536,13 +5536,17 @@ def test_sticky_key_for_compact_request_prefers_codex_session_affinity():
 
 def test_sticky_key_from_session_header_accepts_aliases_in_priority_order():
     assert proxy_service._sticky_key_from_session_header({"session_id": "sid_1"}) == "sid_1"
-    assert proxy_service._sticky_key_from_session_header({"x-codex-session-id": "sid_2"}) == "sid_2"
-    assert proxy_service._sticky_key_from_session_header({"x-codex-conversation-id": "sid_3"}) == "sid_3"
+    assert proxy_service._sticky_key_from_session_header({"session-id": "sid_2"}) == "sid_2"
+    assert proxy_service._sticky_key_from_session_header({"x-codex-session-id": "sid_3"}) == "sid_3"
+    assert proxy_service._sticky_key_from_session_header({"x-codex-conversation-id": "sid_4"}) == "sid_4"
+    assert proxy_service._sticky_key_from_session_header({"thread-id": "thread_5"}) == "thread_5"
     assert (
         proxy_service._sticky_key_from_session_header(
             {
-                "x-codex-conversation-id": "sid_3",
-                "x-codex-session-id": "sid_2",
+                "thread-id": "thread_5",
+                "x-codex-conversation-id": "sid_4",
+                "x-codex-session-id": "sid_3",
+                "session-id": "sid_2",
                 "session_id": "sid_1",
             }
         )
@@ -5558,6 +5562,8 @@ def test_owner_lookup_session_id_from_headers_prefers_turn_state_then_session_al
     )
     assert proxy_service._owner_lookup_session_id_from_headers({"x-codex-session-id": "sid_2"}) == "sid_2"
     assert proxy_service._owner_lookup_session_id_from_headers({"x-codex-conversation-id": "sid_3"}) == "sid_3"
+    assert proxy_service._owner_lookup_session_id_from_headers({"session-id": "sid_4"}) == "sid_4"
+    assert proxy_service._owner_lookup_session_id_from_headers({"thread-id": "thread_5"}) == "thread_5"
     assert proxy_service._owner_lookup_session_id_from_headers({}) is None
 
 
@@ -5721,7 +5727,7 @@ def test_sticky_key_for_responses_request_derives_when_payload_key_is_whitespace
 
 
 @pytest.mark.asyncio
-async def test_service_compact_budget_does_not_override_unbounded_read_timeout(monkeypatch):
+async def test_service_compact_budget_bounds_unconfigured_upstream_read_timeout(monkeypatch):
     settings = _make_proxy_settings(log_proxy_service_tier_trace=False)
     request_logs = _RequestLogsRecorder()
     service = proxy_service.ProxyService(_repo_factory(request_logs))
@@ -5751,11 +5757,18 @@ async def test_service_compact_budget_does_not_override_unbounded_read_timeout(m
 
     payload = ResponsesCompactRequest.model_validate({"model": "gpt-5.1", "instructions": "hi", "input": []})
 
-    result = await service.compact_responses(payload, {"session_id": "sid-compact"})
+    result = await service.compact_responses(
+        payload,
+        {
+            "session_id": "sid-compact",
+            "x-codex-turn-metadata": '{"request_kind":"compaction","turn_id":"turn_compact"}',
+        },
+    )
 
     assert captured["connect_timeout"] == pytest.approx(3.0)
-    assert captured["total_timeout"] is None
+    assert captured["total_timeout"] == pytest.approx(3.0)
     assert result.model_extra == {"output": []}
+    assert request_logs.calls[-1]["request_kind"] == "compaction"
 
 
 def test_logged_error_json_response_emits_proxy_error_log(caplog):
@@ -9363,7 +9376,10 @@ async def test_prepare_websocket_response_create_request_normalizes_payload_and_
             "service_tier": "priority",
             "reasoning": {"effort": "low"},
         },
-        headers={"session_id": "sid-ignored"},
+        headers={
+            "session_id": "sid-ignored",
+            "x-codex-turn-metadata": '{"request_kind":"prewarm","turn_id":"turn_prewarm"}',
+        },
         codex_session_affinity=False,
         openai_cache_affinity=True,
         sticky_threads_enabled=False,
@@ -9382,6 +9398,7 @@ async def test_prepare_websocket_response_create_request_normalizes_payload_and_
     assert prepared.request_state.model == "gpt-5.2"
     assert prepared.request_state.service_tier == "priority"
     assert prepared.request_state.reasoning_effort == "high"
+    assert prepared.request_state.request_kind == "prewarm"
     assert prepared.affinity_policy.key == "thread_123"
     assert prepared.affinity_policy.kind == proxy_service.StickySessionKind.PROMPT_CACHE
     normalized_payload = json.loads(prepared.text_data)
@@ -10813,6 +10830,48 @@ async def test_finalize_websocket_request_state_updates_balancer_state(monkeypat
     record_success.assert_awaited_once_with(account)
     handle_stream_error.assert_not_awaited()
     assert completed_upstream_control.reconnect_requested is False
+    assert request_logs.calls[-1]["request_kind"] == "normal"
+
+    record_success.reset_mock()
+    handle_stream_error.reset_mock()
+    prewarm_payload: dict[str, JsonValue] = {
+        "type": "response.completed",
+        "response": {
+            "id": "resp_ws_prewarm",
+            "usage": {"input_tokens": 9_099, "output_tokens": 0, "total_tokens": 9_099},
+        },
+    }
+    prewarm_event = parse_sse_event(f"data: {json.dumps(prewarm_payload)}\n\n")
+    assert prewarm_event is not None
+    prewarm_state = proxy_service._WebSocketRequestState(
+        request_id="ws_req_prewarm",
+        model="gpt-5.1",
+        service_tier=None,
+        reasoning_effort=None,
+        api_key_reservation=None,
+        started_at=0.0,
+        request_kind="prewarm",
+    )
+    prewarm_upstream_control = proxy_service._WebSocketUpstreamControl()
+
+    await service._finalize_websocket_request_state(
+        prewarm_state,
+        account=account,
+        account_id_value=account.id,
+        event=prewarm_event,
+        event_type="response.completed",
+        payload=prewarm_payload,
+        api_key=None,
+        upstream_control=prewarm_upstream_control,
+        response_create_gate=asyncio.Semaphore(1),
+    )
+
+    record_success.assert_not_awaited()
+    handle_stream_error.assert_not_awaited()
+    assert prewarm_upstream_control.reconnect_requested is False
+    assert request_logs.calls[-1]["status"] == "success"
+    assert request_logs.calls[-1]["request_kind"] == "prewarm"
+    assert request_logs.calls[-1]["output_tokens"] == 0
 
     failed_payload: dict[str, JsonValue] = {
         "type": "response.failed",
@@ -14416,6 +14475,7 @@ async def test_process_upstream_websocket_text_retries_precreated_previous_respo
         error_type_override="server_error",
         error_param_override="previous_response_id",
         error_http_status_override=502,
+        preferred_account_id=account.id,
     )
     pending_requests = deque([pending_request])
     upstream_control = proxy_service._WebSocketUpstreamControl()
